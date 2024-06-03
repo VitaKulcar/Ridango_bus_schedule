@@ -1,11 +1,10 @@
-package com.example.Ridango_bus_schedule;
+package models;
 
 public class UserInput {
     private static UserInput instance;
-
-    int busId;
-    int numberOfBus;
-    TimeFormat timeFormat;
+    private int busId;
+    private int numberOfBus;
+    private TimeFormat timeFormat;
 
     private UserInput() {
     }
@@ -23,9 +22,21 @@ public class UserInput {
         this.timeFormat = timeFormat;
     }
 
+    public int getBusId() {
+        return busId;
+    }
+
+    public int getNumberOfBus() {
+        return numberOfBus;
+    }
+
+    public TimeFormat getTimeFormat() {
+        return timeFormat;
+    }
+
     @Override
     public String toString() {
         String name = GtfsFilesReader.getBusStopName(this.busId);
-        return "Postajališče " + name + " (id postaje " + busId + ")";
+        return "Postajališče " + name;
     }
 }

@@ -1,42 +1,41 @@
-package com.example.Ridango_bus_schedule;
+package models;
 
 import java.time.Duration;
 import java.time.LocalTime;
 
-public class BusStop {
-    String tripId;
-    int routeId;
-    LocalTime absoluteTime;
+public class Bus {
+    private final String tripId;
+    private int routeId;
+    private final LocalTime absoluteTime;
 
 
-    public BusStop(String tripId, LocalTime arrivalTime) {
+    public Bus(String tripId, LocalTime arrivalTime) {
         this.tripId = tripId;
         this.absoluteTime = arrivalTime;
     }
 
-    public void setRouteId(int i) {
-        this.routeId = i;
+    public void setRouteId(int id) {
+        routeId = id;
     }
 
     public Integer getRouteId() {
-        return this.routeId;
+        return routeId;
     }
 
     public String getTripId() {
-        return this.tripId;
+        return tripId;
     }
 
     public LocalTime getAbsoluteTime() {
-        return this.absoluteTime;
+        return absoluteTime;
     }
 
     public String getAbsoluteTimeString() {
-        return this.absoluteTime.toString();
+        return absoluteTime.toString();
     }
 
     public String getRelativeTimeString(LocalTime localTimeNow) {
         Duration duration = Duration.between(localTimeNow, absoluteTime);
         return duration.toMinutes() + " min";
-
     }
 }

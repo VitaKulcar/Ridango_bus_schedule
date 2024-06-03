@@ -1,4 +1,4 @@
-package com.example.Ridango_bus_schedule;
+package models;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -25,25 +25,60 @@ public class GtfsFilesReader {
         return StationName;
     }
 
-    public static Map<String, List<BusStop>> getBusLines(UserInput userInput, LocalTime localTimeNow) {
-        List<BusStop> busStops = new ArrayList<>();
-        addTripId(userInput.busId, busStops, localTimeNow);
-        addRouteId(busStops);
+    public static Map<String, List<Bus>> getBusLines(UserInput userInput, LocalTime localTimeNow) {
+        List<Bus> buses = new ArrayList<>();
+        addTripId(userInput.getBusId(), buses, localTimeNow);
+        addRouteId(buses);
 
-        Map<Integer, List<BusStop>> routes = busStops.stream().collect(Collectors.groupingBy(BusStop::getRouteId));
-        routes.values().forEach(x -> x.sort(Comparator.comparing(BusStop::getAbsoluteTime)));
+        Map<Integer, List<Bus>> routes = buses.stream().collect(Collectors.groupingBy(Bus::getRouteId));
+        routes.values().forEach(x -> x.sort(Comparator.comparing(Bus::getAbsoluteTime)));
 
-        Map<String, List<BusStop>> busRoutes = new HashMap<>();
+        Map<String, List<Bus>> busRoutes = new HashMap<>();
         Map<Integer, String> routesNames = getRoutes();
         routes.forEach((key, value) -> {
-            if (value.size() > userInput.numberOfBus) {
+            if (value.size() > userInput.getNumberOfBus()) {
                 String routeName = routesNames.get(key);
-                busRoutes.put(routeName, value.subList(0, userInput.numberOfBus));
+                busRoutes.put(routeName, value.subList(0, userInput.getNumberOfBus()));
             }
         });
 
         return busRoutes;
     }
+
+    private static void addTripId(int busStopId, List<Bus> buses, LocalTime localTime) {
+        try (BufferedReader br = new BufferedReader(new FileReader("src/gtfs/stop_times.txt"))) {
+            String line = br.readLine(); //header
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                int id = Integer.parseInt(parts[3]);
+                LocalTime time = LocalTime.parse(parts[2]);
+                // Vrni podatke za največ naslednji 2 uri od zahteve.
+                if (id == busStopId && time.isAfter(localTime) && time.isBefore(localTime.plusHours(2))) {
+                    buses.add(new Bus(parts[0], time));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void addRouteId(List<Bus> buses) {
+        try (BufferedReader br = new BufferedReader(new FileReader("src/gtfs/trips.txt"))) {
+            String line = br.readLine(); //header
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                String id = parts[2];
+                for (Bus stop : buses) {
+                    if (stop.getTripId().equals(id)) {
+                        stop.setRouteId(Integer.parseInt(parts[0]));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private static Map<Integer, String> getRoutes() {
         Map<Integer, String> routes = new HashMap<>();
@@ -59,39 +94,5 @@ public class GtfsFilesReader {
             e.printStackTrace();
         }
         return routes;
-    }
-
-    private static void addTripId(int busStopId, List<BusStop> busStops, LocalTime localTime) {
-        try (BufferedReader br = new BufferedReader(new FileReader("src/gtfs/stop_times.txt"))) {
-            String line = br.readLine(); //header
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(",");
-                int id = Integer.parseInt(parts[3]);
-                LocalTime time = LocalTime.parse(parts[2]);
-                // Vrni podatke za največ naslednji 2 uri od zahteve.
-                if (id == busStopId && time.isAfter(localTime) && time.isBefore(localTime.plusHours(2))) {
-                    busStops.add(new BusStop(parts[0], time));
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void addRouteId(List<BusStop> busStops) {
-        try (BufferedReader br = new BufferedReader(new FileReader("src/gtfs/trips.txt"))) {
-            String line = br.readLine(); //header
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(",");
-                String id = parts[2];
-                for (BusStop stop : busStops) {
-                    if (stop.getTripId().equals(id)) {
-                        stop.setRouteId(Integer.parseInt(parts[0]));
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

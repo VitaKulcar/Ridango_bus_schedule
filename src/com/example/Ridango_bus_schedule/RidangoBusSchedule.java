@@ -1,54 +1,44 @@
 package com.example.Ridango_bus_schedule;
 
+import models.Bus;
+import models.GtfsFilesReader;
+import models.TimeFormat;
+import models.UserInput;
+
 import java.time.LocalTime;
-import java.util.Scanner;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class RidangoBusSchedule {
-
-    private static LocalTime localTimeNow = LocalTime.of(12, 0);
+    private static final LocalTime LOCAL_TIME_NOW = LocalTime.of(12, 0);
+    private static final UserInput USER_INPUT_INSTANCE = UserInput.getInstance();
 
     public static void main(String[] args) {
-        System.out.println("Pozdravljeni!");
-        UserInput userInput = userInputReader();
-
-        Map<String, List<BusStop>> busStops = GtfsFilesReader.getBusLines(userInput, localTimeNow);
-        if (!busStops.isEmpty()) {
-            printRoutes(busStops, userInput.timeFormat, localTimeNow);
-        } else System.out.println("Ni zadetkov iskanja");
-    }
-
-    private static UserInput userInputReader() {
-        System.out.println("Vnesite podatke: id_postajališča število_avtobusov absolute/relative");
-        UserInput userInput = UserInput.getInstance();
-        Scanner scanner = new Scanner(System.in);
-        String input = scanner.nextLine();
-        String[] parts = input.split(" ");
-        if (parts.length == 3) {
+        if (args.length == 3) {
             try {
-                int id = Integer.parseInt(parts[0]);
-                int number = Integer.parseInt(parts[1]);
-                TimeFormat time = TimeFormat.valueOf(parts[2].toLowerCase());
-
-                userInput.setValues(id, number, time);
-                System.out.println(userInput);
+                int id = Integer.parseInt(args[0]);
+                int number = Integer.parseInt(args[1]);
+                TimeFormat time = TimeFormat.valueOf(args[2]);
+                USER_INPUT_INSTANCE.setValues(id, number, time);
+                System.out.println(USER_INPUT_INSTANCE);
             } catch (NumberFormatException e) {
                 System.out.println("Napaka: id_postajališča in število_avtobusov morata biti števili.");
             } catch (IllegalArgumentException e) {
                 System.out.println("Napaka: časovni format more biti 'absolute' ali 'relative'.");
             }
-        } else {
-            System.out.println("Napaka, vnesite točno tri argumente ločene z belimi presledki.");
+
+            Map<String, List<Bus>> busStops = GtfsFilesReader.getBusLines(USER_INPUT_INSTANCE, LOCAL_TIME_NOW);
+            if (!busStops.isEmpty()) {
+                printRoutes(busStops, USER_INPUT_INSTANCE.getTimeFormat());
+            } else System.out.println("Ni zadetkov iskanja");
         }
-        scanner.close();
-        return userInput;
     }
 
-    private static void printRoutes(Map<String, List<BusStop>> busStops, TimeFormat timeFormat, LocalTime localTimeNow) {
+    private static void printRoutes(Map<String, List<Bus>> busStops, TimeFormat timeFormat) {
         busStops.forEach((routeId, values) -> {
-            String formattedTimes = values.stream().map(busStop -> TimeFormat.relative == timeFormat ? busStop.getRelativeTimeString(localTimeNow) : busStop.getAbsoluteTimeString()).collect(Collectors.joining(", "));
+            String formattedTimes = values.stream()
+                    .map(bus -> TimeFormat.relative == timeFormat ? bus.getRelativeTimeString(RidangoBusSchedule.LOCAL_TIME_NOW) : bus.getAbsoluteTimeString()).collect(Collectors.joining(", "));
             System.out.println(routeId + ": " + formattedTimes);
         });
     }

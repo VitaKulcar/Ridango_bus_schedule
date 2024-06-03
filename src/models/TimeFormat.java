@@ -1,4 +1,4 @@
-package com.example.Ridango_bus_schedule;
+package models;
 
 public enum TimeFormat {
     relative,
