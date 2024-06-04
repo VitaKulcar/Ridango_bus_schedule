@@ -1,7 +1,7 @@
 package com.example.Ridango_bus_schedule;
 
 import models.Bus;
-import models.GtfsFilesReader;
+import FileReader.GtfsFilesReader;
 import models.TimeFormat;
 import models.UserInput;
 
@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public class RidangoBusSchedule {
     private static final LocalTime LOCAL_TIME_NOW = LocalTime.of(12, 0);
     private static final UserInput USER_INPUT_INSTANCE = UserInput.getInstance();
+    private static final int TIME_SPAN = 2; //največ 2 uri od zahteve
 
     public static void main(String[] args) {
         if (args.length == 3) {
@@ -28,7 +29,7 @@ public class RidangoBusSchedule {
                 System.out.println("Napaka: časovni format more biti 'absolute' ali 'relative'.");
             }
 
-            Map<String, List<Bus>> busStops = GtfsFilesReader.getBusLines(USER_INPUT_INSTANCE, LOCAL_TIME_NOW);
+            Map<String, List<Bus>> busStops = GtfsFilesReader.getBusLines(USER_INPUT_INSTANCE, LOCAL_TIME_NOW, TIME_SPAN);
             if (!busStops.isEmpty()) {
                 printRoutes(busStops, USER_INPUT_INSTANCE.getTimeFormat());
             } else System.out.println("Ni zadetkov iskanja");

@@ -1,4 +1,7 @@
-package models;
+package FileReader;
+
+import models.Bus;
+import models.UserInput;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -20,14 +23,14 @@ public class GtfsFilesReader {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("napaka v funkciji getBusStopName");
         }
         return StationName;
     }
 
-    public static Map<String, List<Bus>> getBusLines(UserInput userInput, LocalTime localTimeNow) {
+    public static Map<String, List<Bus>> getBusLines(UserInput userInput, LocalTime localTimeNow, int timeSpan) {
         List<Bus> buses = new ArrayList<>();
-        addTripId(userInput.getBusId(), buses, localTimeNow);
+        addTripId(userInput.getBusId(), buses, localTimeNow, timeSpan);
         addRouteId(buses);
 
         Map<Integer, List<Bus>> routes = buses.stream().collect(Collectors.groupingBy(Bus::getRouteId));
@@ -35,30 +38,29 @@ public class GtfsFilesReader {
 
         Map<String, List<Bus>> busRoutes = new HashMap<>();
         Map<Integer, String> routesNames = getRoutes();
+        int numOfBus = userInput.getNumberOfBus();
         routes.forEach((key, value) -> {
-            if (value.size() > userInput.getNumberOfBus()) {
-                String routeName = routesNames.get(key);
-                busRoutes.put(routeName, value.subList(0, userInput.getNumberOfBus()));
-            }
+            String routeName = routesNames.get(key);
+            if (value.size() > numOfBus) busRoutes.put(routeName, value.subList(0, userInput.getNumberOfBus()));
+            else busRoutes.put(routeName, value.subList(0, value.size()));
         });
 
         return busRoutes;
     }
 
-    private static void addTripId(int busStopId, List<Bus> buses, LocalTime localTime) {
+    private static void addTripId(int busStopId, List<Bus> buses, LocalTime localTime, int timeSpan) {
         try (BufferedReader br = new BufferedReader(new FileReader("src/gtfs/stop_times.txt"))) {
             String line = br.readLine(); //header
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split(",");
                 int id = Integer.parseInt(parts[3]);
                 LocalTime time = LocalTime.parse(parts[2]);
-                // Vrni podatke za največ naslednji 2 uri od zahteve.
-                if (id == busStopId && time.isAfter(localTime) && time.isBefore(localTime.plusHours(2))) {
+                if (id == busStopId && time.isAfter(localTime) && time.isBefore(localTime.plusHours(timeSpan))) {
                     buses.add(new Bus(parts[0], time));
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("napaka v funkciji addTripId");
         }
     }
 
@@ -68,14 +70,15 @@ public class GtfsFilesReader {
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split(",");
                 String id = parts[2];
-                for (Bus stop : buses) {
-                    if (stop.getTripId().equals(id)) {
-                        stop.setRouteId(Integer.parseInt(parts[0]));
+                for (Bus bus : buses) {
+                    if (bus.getTripId().equals(id)) {
+                        bus.setRouteId(Integer.parseInt(parts[0]));
                     }
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("napaka v funkciji addRputeId");
+
         }
     }
 
@@ -91,7 +94,7 @@ public class GtfsFilesReader {
                 routes.put(id, name);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("napaka v funkciji getRoutes");
         }
         return routes;
     }

@@ -1,5 +1,7 @@
 package models;
 
+import FileReader.GtfsFilesReader;
+
 public class UserInput {
     private static UserInput instance;
     private int busId;
